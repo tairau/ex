@@ -1,0 +1,485 @@
+openapi: 3.0.0
+info:
+  description: "Exchange App"
+  version: 1.0.0
+  title: Exchange App
+  contact:
+    email: tairau.dev@gmail.com
+tags:
+- name: auth
+  description: Authenticate
+- name: currencies
+  description: Currencies
+- name: wallet
+  description: Wallet
+- name: purchases
+  description: Purchases
+- name: exchanges
+  description: Exchanges
+servers:
+- url: http://localhost/api
+paths:
+  /auth/registration:
+    post:
+      tags:
+      - auth
+      summary: Register user
+      description: "Register user"
+      operationId: RegisterUser
+      requestBody:
+        $ref: "#/components/requestBodies/RegistrationForm"
+      responses:
+        "200":
+          $ref: "#/components/responses/Token"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /auth/login:
+    post:
+      tags:
+      - auth
+      summary: Login user
+      description: "Login user"
+      operationId: LoginUser
+      requestBody:
+        $ref: "#/components/requestBodies/Credentials"
+      responses:
+        "200":
+          $ref: "#/components/responses/Token"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /auth/me:
+    post:
+      tags:
+      - auth
+      security:
+      - BearerAuth: []
+      summary: Logged in user information
+      description: "Logged in user information"
+      operationId: Me
+      responses:
+        "200":
+          $ref: '#/components/responses/Me'
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+        "422":
+          $ref: '#/components/responses/ValidationError'
+  /curencies:
+    get:
+      tags:
+      - currencies
+      security:
+      - BearerAuth: []
+      summary: Currencies list
+      description: "Currencies list"
+      operationId: CurrenciesList
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+        required: false
+        description: Page number
+      responses:
+        "200":
+          $ref: '#/components/responses/Currencies'
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+        "422":
+          $ref: '#/components/responses/ValidationError'
+  /wallets:
+    post:
+      tags:
+      - currencies
+      security:
+      - BearerAuth: []
+      summary: Add wallet
+      description: "Add wallet"
+      operationId: WalletsAdd
+      requestBody:
+        $ref: "#/components/requestBodies/Wallet"
+      responses:
+        "200":
+          $ref: '#/components/responses/Wallet'
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+        "422":
+          $ref: '#/components/responses/ValidationError'
+    get:
+      tags:
+      - currencies
+      security:
+      - BearerAuth: []
+      summary: Wallets list
+      description: "Wallets list"
+      operationId: WalletsList
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+        required: false
+        description: Page number
+      responses:
+        "200":
+          $ref: '#/components/responses/Wallets'
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+        "422":
+          $ref: '#/components/responses/ValidationError'
+  /purchases:
+    post:
+      tags:
+      - purchases
+      security:
+      - BearerAuth: []
+      summary: Add money to wallet
+      description: "Add money to wallet"
+      operationId: AddMoneyToWallet
+      requestBody:
+        $ref: "#/components/requestBodies/Purchase"
+      responses:
+        "204":
+          description: Success
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+        "422":
+          $ref: '#/components/responses/ValidationError'
+  /exchanges:
+    get:
+      tags:
+      - exchanges
+      security:
+      - BearerAuth: []
+      summary: Exchanges list
+      description: "Exchanges list"
+      operationId: ExchangesList
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+        required: false
+        description: Page number
+      responses:
+        "200":
+          $ref: '#/components/responses/Exchanges'
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+        "422":
+          $ref: '#/components/responses/ValidationError'
+    post:
+      tags:
+      - exchanges
+      security:
+      - BearerAuth: []
+      summary: Make bid for exchange
+      description: Make bid for exchange
+      operationId: MakeBidForExchange
+      requestBody:
+        $ref: "#/components/requestBodies/Bid"
+      responses:
+        "200":
+          $ref: "#/components/responses/CreatedExchange"
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+        "422":
+          $ref: '#/components/responses/ValidationError'
+  /exchanges/{id}:
+    delete:
+      tags:
+      - exchanges
+      security:
+      - BearerAuth: []
+      summary: Delete exchange
+      description: Delete exchange
+      operationId: DeleteExchange
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+        description: ID of exchange
+      responses:
+        "204":
+          description: Success
+        "401":
+          $ref: '#/components/responses/UnauthorizedError'
+        "422":
+          $ref: '#/components/responses/ValidationError'
+components:
+  responses:
+    Me:
+      description: Logged in user information
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: "#/components/schemas/UserResource"
+    CreatedExchange:
+      description: CreatedExchange
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: "#/components/schemas/ExchangeResource"
+    Exchanges:
+      description: CreatedExchange
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ShortExchangeResource"
+    Currencies:
+      description: List of currencies
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CurrencyResource"
+    Wallets:
+      description: List of wallets
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WalletResource"
+    Wallet:
+      description: One wallet
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: "#/components/schemas/WalletResource"
+    Token:
+      description: New bearer token
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              token:
+                type: string
+    UnauthorizedError:
+      description: Access token is missing or invalid
+    ValidationError:
+      description: Invalid validation
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+              errors:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    type: string
+  schemas:
+    Password:
+      type: string
+      example: "1234567890!@"
+    Email:
+      type: string
+      example: "example@example.com"
+    Date:
+      type: string
+      example: 2023-01-31T23:35:57+00:00
+      format: Y-m-d\TH:i:sP
+      nullable: false
+    DateNullable:
+      type: string
+      example: 2023-01-31T23:35:57+00:00
+      format: Y-m-d\TH:i:sP
+      nullable: true
+    ShortExchangeResource:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        amount:
+          type: number
+          example: 1000
+        expected_rate:
+          type: number
+          example: 0.0362
+        expired_at:
+          $ref: "#/components/schemas/Date"
+        exchanged_at:
+          $ref: "#/components/schemas/DateNullable"
+        created_at:
+          $ref: "#/components/schemas/Date"
+        deleted_at:
+          $ref: "#/components/schemas/DateNullable"
+    ExchangeResource:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        wallet:
+          $ref: "#/components/schemas/WalletResource"
+        destination_wallet:
+          $ref: "#/components/schemas/WalletResource"
+        amount:
+          type: number
+          example: 1000
+        expected_rate:
+          type: number
+          example: 0.0362
+        expired_at:
+          $ref: "#/components/schemas/Date"
+        exchanged_at:
+          $ref: "#/components/schemas/DateNullable"
+        created_at:
+          $ref: "#/components/schemas/Date"
+        deleted_at:
+          $ref: "#/components/schemas/DateNullable"
+    UserResource:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Mark"
+        email:
+          $ref: "#/components/schemas/Email"
+        created_at:
+          $ref: "#/components/schemas/Date"
+    CurrencyResource:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "New Belarusian Ruble"
+        iso:
+          type: string
+          example: "BYN"
+    WalletResource:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        currency:
+          $ref: "#/components/schemas/CurrencyResource"
+        balance:
+          type: number
+          example: 5000
+  requestBodies:
+    Bid:
+      description: Bid data
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              wallet_id:
+                type: integer
+                example: 1
+                description: "Кошелек с которого списываем"
+              destination_wallet_id:
+                type: integer
+                example: 1
+                description: "Кошелек на который получаем"
+              amount:
+                type: number
+                example: 1000
+              expected_rate:
+                type: number
+                example: 0.0362
+                description: "Ожидаемый рейт на валюту"
+              expired_at:
+                $ref: "#/components/schemas/Date"
+    Purchase:
+      description: Add money to wallet
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              wallet_id:
+                type: integer
+                example: 1
+              amount:
+                type: number
+                example: 10000
+    Wallet:
+      description: For new wallet
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - currency_id
+            properties:
+              currency_id:
+                type: integer
+                example: 25
+    RegistrationForm:
+      description: For register new user
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - name
+            - email
+            - password
+            properties:
+              name:
+                type: string
+                example: "Mark"
+              email:
+                $ref: "#/components/schemas/Email"
+              password:
+                $ref: "#/components/schemas/Password"
+    Credentials:
+      description: For login existing user
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+            - email
+            - password
+            properties:
+              email:
+                $ref: "#/components/schemas/Email"
+              password:
+                $ref: "#/components/schemas/Password"
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer

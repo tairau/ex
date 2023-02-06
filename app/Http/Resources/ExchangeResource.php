@@ -18,19 +18,19 @@ class ExchangeResource extends JsonResource
     public function toArray($request): array
     {
         return [
-            'id'                => $this->exchange->id,
-            'wallet'            => new WalletResource(
+            'id'                 => $this->exchange->id,
+            'wallet'             => new WalletResource(
                 $this->whenLoaded('wallet')
             ),
-            'destinationWallet' => new WalletResource(
+            'destination_wallet' => new WalletResource(
                 $this->whenLoaded('destinationWallet')
             ),
-            'amount'            => $this->exchange->amount->toFloat(),
-            'expected_rate'     => $this->exchange->expected_rate->toFloat(),
-            'expired_at'        => $this->exchange->expired_at->toIso8601String(),
-            'exchanged_at'      => $this->exchange->exchanged_at?->toIso8601String(),
-            'created_at'        => $this->exchange->created_at->toIso8601String(),
-            'deleted_at'        => $this->exchange->deleted_at?->toIso8601String(),
+            'amount'             => $this->exchange->amount->toFloat(),
+            'expected_rate'      => $this->exchange->expected_rate->toFloat(),
+            'expired_at'         => $this->exchange->expired_at->toIso8601String(),
+            'exchanged_at'       => $this->exchange->exchanged_at?->toIso8601String(),
+            'created_at'         => $this->exchange->created_at->toIso8601String(),
+            'deleted_at'         => $this->exchange->deleted_at?->toIso8601String(),
         ];
     }
 }
