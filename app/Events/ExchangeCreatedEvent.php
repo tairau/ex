@@ -6,7 +6,7 @@ namespace App\Events;
 
 use App\Models\Exchange;
 
-readonly class ExchangeCreatedEvent
+class ExchangeCreatedEvent
 {
-    public function __construct(public Exchange $exchange) { }
+    public function __construct(public readonly Exchange $exchange) { }
 }

@@ -8,7 +8,7 @@ namespace App\Services\Currency;
 use App\Models\Currency;
 use Illuminate\Database\Eloquent\Collection;
 
-class CurrencyService
+class CurrencyRepository
 {
     /**
      * @return \Illuminate\Database\Eloquent\Collection<\App\Models\Currency>

@@ -2,7 +2,7 @@
 
 declare(strict_types = 1);
 
-namespace App\Data\Casts;
+namespace App\Data\Extends\Casts;
 
 use Carbon\CarbonImmutable;
 use Carbon\Exceptions\InvalidFormatException;

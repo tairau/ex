@@ -7,18 +7,24 @@ namespace App\Services\Exchange;
 use App\Data\Exchange\Bid;
 use App\Events\ExchangeCreatedEvent;
 use App\Models\Exchange;
-use App\Models\Rate;
 use App\Models\User;
+use App\Services\Database\Transactional;
 use App\Services\Exchange\Exceptions\DoesntHaveOrderedRatesException;
+use App\Services\Rate\RateRepository;
+use App\Services\Wallet\WalletRepository;
 use Illuminate\Contracts\Events\Dispatcher;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\LazyCollection;
 use Illuminate\Validation\ValidationException;
 
-readonly class ExchangeService
+class ExchangeService
 {
-    public function __construct(private Dispatcher $dispatcher) { }
+    public function __construct(
+        private readonly Dispatcher $dispatcher,
+        private readonly WalletRepository $walletRepository,
+        private readonly ExchangeRepository $exchangeRepository,
+        private readonly RateRepository $rateRepository,
+        private readonly Transactional $transactional,
+    ) {
+    }
 
     /**
      * @param \App\Models\User       $user
@@ -29,17 +35,15 @@ readonly class ExchangeService
      */
     public function bid(User $user, Bid $bid): Exchange
     {
-        /** @var \App\Models\Wallet $wallet */
-        $wallet = $user
-            ->wallets()
-            ->where('id', $bid->walletId)
-            ->firstOrFail();
+        $wallet = $this->walletRepository->walletByOwner(
+            $bid->walletId,
+            $user
+        );
 
-        /** @var \App\Models\Wallet $destinationWallet */
-        $destinationWallet = $user
-            ->wallets()
-            ->where('id', $bid->destinationWalletId)
-            ->firstOrFail();
+        $destinationWallet = $this->walletRepository->walletByOwner(
+            $bid->destinationWalletId,
+            $user
+        );
 
         if ($destinationWallet->isSameCurrency($wallet)) {
             throw ValidationException::withMessages([
@@ -53,16 +57,12 @@ readonly class ExchangeService
             ]);
         }
 
-        $exchange = new Exchange([
-            'amount'        => $bid->amount,
-            'expected_rate' => $bid->expected_rate,
-            'expired_at'    => $bid->expiredAt,
-        ]);
-
-        $exchange->user()->associate($user);
-        $exchange->wallet()->associate($wallet);
-        $exchange->destinationWallet()->associate($destinationWallet);
-        $exchange->save();
+        $exchange = $this->exchangeRepository->create(
+            $bid,
+            $user,
+            $wallet,
+            $destinationWallet
+        );
 
         $this->dispatcher->dispatch(new ExchangeCreatedEvent($exchange));
 
@@ -73,41 +73,24 @@ readonly class ExchangeService
      * @param \App\Models\Exchange $exchange
      *
      * @return void
+     * @throws \Throwable
      */
     public function tryResolve(Exchange $exchange): void
     {
         $transaction = function () use ($exchange) {
-            /** @var \App\Models\Exchange $exchange */
-            $exchange = $exchange
-                ->newModelQuery()
-                ->active()
-                ->notProcessed()
-                ->where('id', $exchange->id)
-                ->lockForUpdate()
-                ->first();
+            $exchange = $this->exchangeRepository->lockedExchange($exchange);
 
             if ($exchange === null) {
                 return;
             }
 
-            /** @var \App\Models\Wallet $destinationWallet */
-            $destinationWallet = $exchange
-                ->destinationWallet()
-                ->lockForUpdate()
-                ->first();
+            $destinationWallet = $this->exchangeRepository
+                ->lockedDestinationWallet($exchange);
 
-            /** @var \App\Models\Wallet $wallet */
-            $wallet = $exchange
-                ->wallet()
-                ->lockForUpdate()
-                ->first();
+            $wallet = $this->exchangeRepository->lockedWallet($exchange);
 
-            /** @var \App\Models\Rate|null $rate */
-            $rate = Rate::query()
-                ->where('from_currency_id', $wallet->currency_id)
-                ->where('to_currency_id', $destinationWallet->currency_id)
-                ->where('date', today())
-                ->first();
+            $rate =
+                $this->rateRepository->actualRate($wallet, $destinationWallet);
 
             if ($rate === null) {
                 throw new DoesntHaveOrderedRatesException();
@@ -123,17 +106,16 @@ readonly class ExchangeService
 
             $convertedAmount = $rate->convert($exchange->amount);
             $wallet->removeFromBalance($exchange->amount);
-            $wallet->save();
             $destinationWallet->addToBalance($convertedAmount);
-            $destinationWallet->save();
-            $exchange->exchanged_at = now();
-            $exchange->rate()->associate($rate);
-            $exchange->save();
+
+            $this->walletRepository->persist($wallet);
+            $this->walletRepository->persist($destinationWallet);
+            $this->exchangeRepository->applyRateAndClose($exchange, $rate);
         };
 
-        DB::transaction($transaction);
+        $this->transactional->wrap($transaction);
 
-        $exchange->refresh();
+        $this->exchangeRepository->refresh($exchange);
     }
 
     /**
@@ -144,39 +126,9 @@ readonly class ExchangeService
      */
     public function cancel(User $user, int $exchangeId): void
     {
-        /** @var \App\Models\Exchange|null $exchange */
-        $exchange = $user
-            ->exchanges()
-            ->where('id', $exchangeId)
-            ->notProcessed()
-            ->firstOrFail();
+        $exchange = $this->exchangeRepository
+            ->notProcessedById($user, $exchangeId);
 
-        $exchange->delete();
-    }
-
-    /**
-     * @param \App\Models\User $user
-     *
-     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
-     */
-    public function paginateForUser(User $user): LengthAwarePaginator
-    {
-        return $user
-            ->exchanges()
-            ->with('rate')
-            ->withTrashed()
-            ->paginate();
-    }
-
-    /**
-     * @return \Illuminate\Support\LazyCollection<\App\Models\Exchange>
-     */
-    public function forExchangeProcessing(): LazyCollection
-    {
-        return Exchange::query()
-            ->orderBy('created_at')
-            ->notProcessed()
-            ->active()
-            ->lazyById();
+        $this->exchangeRepository->delete($exchange);
     }
 }

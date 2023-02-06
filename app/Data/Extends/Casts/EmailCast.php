@@ -2,7 +2,7 @@
 
 declare(strict_types = 1);
 
-namespace App\Data\Casts;
+namespace App\Data\Extends\Casts;
 
 use Illuminate\Support\Str;
 use Spatie\LaravelData\Casts\Cast;

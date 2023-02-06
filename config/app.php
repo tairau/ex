@@ -191,11 +191,11 @@ return [
          */
         App\Providers\AppServiceProvider::class,
         App\Providers\AuthServiceProvider::class,
-        // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
 
-        App\Services\ApiLayer\ExchangeServiceProvider::class
+        App\Services\ApiLayer\ExchangeServiceProvider::class,
+        App\Services\Database\DatabaseServiceProvider::class,
 
     ],
 

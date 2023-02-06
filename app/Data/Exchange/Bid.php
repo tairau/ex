@@ -4,9 +4,9 @@ declare(strict_types = 1);
 
 namespace App\Data\Exchange;
 
-use App\Data\Casts\DateTimeCast;
-use App\Data\Casts\DecimalCast;
-use App\Data\Rules\Decimal;
+use App\Data\Extends\Casts\DateTimeCast;
+use App\Data\Extends\Casts\DecimalCast;
+use App\Data\Extends\Rules\Decimal;
 use Brick\Math\BigDecimal;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
@@ -16,7 +16,6 @@ use Spatie\LaravelData\Attributes\Validation\DateFormat;
 use Spatie\LaravelData\Attributes\Validation\IntegerType;
 use Spatie\LaravelData\Attributes\Validation\Max;
 use Spatie\LaravelData\Attributes\Validation\Min;
-use Spatie\LaravelData\Attributes\Validation\Numeric;
 use Spatie\LaravelData\Attributes\Validation\Required;
 use Spatie\LaravelData\Attributes\WithCast;
 use Spatie\LaravelData\Data;
@@ -43,7 +42,8 @@ class Bid extends Data
         #[Max(10000)]
         #[Min(0)]
         #[WithCast(DecimalCast::class)]
-        public readonly BigDecimal $expected_rate,
+        #[MapInputName(input: 'expected_rate')]
+        public readonly BigDecimal $expectedRate,
         #[Required]
         #[DateFormat(format: DateTimeInterface::ATOM)]
         #[After(date: 'tomorrow')]

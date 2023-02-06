@@ -7,6 +7,7 @@ namespace App\Http\Controllers;
 use App\Data\Exchange\Bid;
 use App\Http\Resources\ExchangeResource;
 use App\Http\Resources\LengthAwarePaginatorMetaResource;
+use App\Services\Exchange\ExchangeRepository;
 use App\Services\Exchange\ExchangeService;
 use Illuminate\Auth\AuthManager;
 use Illuminate\Contracts\Routing\ResponseFactory;
@@ -18,6 +19,7 @@ class ExchangeController extends Controller
         private readonly ResponseFactory $response,
         private readonly AuthManager $authManager,
         private readonly ExchangeService $exchangeService,
+        private readonly ExchangeRepository $exchangeRepository,
     ) {
     }
 
@@ -39,6 +41,11 @@ class ExchangeController extends Controller
         ]);
     }
 
+    /**
+     * @param int $exchangeId
+     *
+     * @return \Symfony\Component\HttpFoundation\Response
+     */
     public function cancel(int $exchangeId): Response
     {
         /** @var \App\Models\User $user */
@@ -49,12 +56,15 @@ class ExchangeController extends Controller
         return $this->response->noContent();
     }
 
+    /**
+     * @return \Symfony\Component\HttpFoundation\Response
+     */
     public function all(): Response
     {
         /** @var \App\Models\User $user */
         $user = $this->authManager->user();
 
-        $paginator = $this->exchangeService->paginateForUser($user);
+        $paginator = $this->exchangeRepository->paginatedByUser($user);
 
         return $this->response->json([
             'data' => ExchangeResource::collection($paginator->items()),

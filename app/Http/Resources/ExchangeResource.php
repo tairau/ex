@@ -25,8 +25,8 @@ class ExchangeResource extends JsonResource
             'destinationWallet' => new WalletResource(
                 $this->whenLoaded('destinationWallet')
             ),
-            'amount'            => (string)$this->exchange->amount,
-            'expected_rate'     => (string)$this->exchange->expected_rate,
+            'amount'            => $this->exchange->amount->toFloat(),
+            'expected_rate'     => $this->exchange->expected_rate->toFloat(),
             'expired_at'        => $this->exchange->expired_at->toIso8601String(),
             'exchanged_at'      => $this->exchange->exchanged_at?->toIso8601String(),
             'created_at'        => $this->exchange->created_at->toIso8601String(),

@@ -5,10 +5,9 @@ declare(strict_types = 1);
 namespace App\Console\Commands;
 
 use App\Services\ApiLayer\Exchange\ExchangeClient;
-use App\Services\Currency\CurrencyService;
-use App\Services\Rate\RateService;
+use App\Services\Currency\CurrencyRepository;
+use App\Services\Rate\RateRepository;
 use Brick\Math\BigDecimal;
-use Brick\Math\Exception\MathException;
 use Brick\Math\RoundingMode;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
@@ -18,11 +17,11 @@ use Symfony\Component\Console\Attribute\AsCommand;
 class LoadRatesCommand extends Command
 {
     public function handle(
-        CurrencyService $currencyService,
+        CurrencyRepository $currencyRepository,
         ExchangeClient $exchangeClient,
-        RateService $rateService,
+        RateRepository $rateRepository,
     ) {
-        $currencies = $currencyService->all()->keyBy('iso');
+        $currencies = $currencyRepository->all()->keyBy('iso');
 
         foreach ($currencies as $currency) {
             $rates = $exchangeClient->latest($currency->iso);
@@ -41,7 +40,7 @@ class LoadRatesCommand extends Command
                     $actualRate = $actualRate->toScale(4, RoundingMode::HALF_UP);
                 }
 
-                $rateService->upsert($currency, $toCurrency, $actualRate, $date);
+                $rateRepository->upsert($currency, $toCurrency, $actualRate, $date);
             }
         }
     }

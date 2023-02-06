@@ -4,7 +4,7 @@ declare(strict_types = 1);
 
 namespace App\Data\Auth;
 
-use App\Data\Casts\EmailCast;
+use App\Data\Extends\Casts\EmailCast;
 use Spatie\LaravelData\Attributes\Validation\Email;
 use Spatie\LaravelData\Attributes\Validation\Max;
 use Spatie\LaravelData\Attributes\Validation\Password;

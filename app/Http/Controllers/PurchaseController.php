@@ -5,7 +5,7 @@ declare(strict_types = 1);
 namespace App\Http\Controllers;
 
 use App\Data\Purchase\Fund;
-use App\Services\Purchase\PurchaseService;
+use App\Services\Purchase\PurchaseRepository;
 use Illuminate\Auth\AuthManager;
 use Illuminate\Contracts\Routing\ResponseFactory;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,7 +15,7 @@ class PurchaseController extends Controller
     public function __construct(
         private readonly ResponseFactory $response,
         private readonly AuthManager $authManager,
-        private readonly PurchaseService $purchaseService,
+        private readonly PurchaseRepository $purchaseRepository,
     ) {
     }
 
@@ -24,7 +24,7 @@ class PurchaseController extends Controller
         /** @var \App\Models\User $user */
         $user = $this->authManager->user();
 
-        $this->purchaseService->add($user, $fund);
+        $this->purchaseRepository->add($user, $fund);
 
         return $this->response->noContent();
     }

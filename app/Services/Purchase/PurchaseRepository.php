@@ -7,17 +7,18 @@ namespace App\Services\Purchase;
 use App\Data\Purchase\Fund;
 use App\Models\User;
 use App\Models\Wallet;
-use Illuminate\Support\Facades\DB;
+use App\Services\Database\Transactional;
 
-class PurchaseService
+class PurchaseRepository
 {
+    public function __construct(private readonly Transactional $transactional) { }
 
     /**
      * @param \App\Models\User        $user
      * @param \App\Data\Purchase\Fund $fund
      *
      * @return \App\Models\Wallet
-     * @throws \Illuminate\Database\Eloquent\ModelNotFoundException
+     * @throws \Throwable
      */
     public function add(
         User $user,
@@ -37,6 +38,6 @@ class PurchaseService
             return $wallet;
         };
 
-        return DB::transaction($transaction);
+        return $this->transactional->wrap($transaction);
     }
 }

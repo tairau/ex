@@ -6,18 +6,20 @@ namespace App\Services\Auth;
 
 use App\Data\Auth\LoginCredentials;
 use App\Data\Auth\RegistrationForm;
-use App\Models\User;
+use App\Services\User\UserRepository;
 use Illuminate\Contracts\Hashing\Hasher;
 use Illuminate\Contracts\Translation\Translator;
-use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\NewAccessToken;
 
-readonly class AuthService
+class AuthService
 {
+    private const NULL_USER_AGENT = 'Unknown';
+
     public function __construct(
-        private Translator $translator,
-        private Hasher $hasher,
+        private readonly UserRepository $repository,
+        private readonly Translator $translator,
+        private readonly Hasher $hasher,
     ) {
     }
 
@@ -32,12 +34,7 @@ readonly class AuthService
         RegistrationForm $registrationForm,
         string|null $userAgent,
     ): NewAccessToken {
-        $email = Str::lower($registrationForm->email);
-
-        /** @var User $user */
-        $user = User::query()
-            ->where('email', $email)
-            ->first();
+        $user = $this->repository->findByEmail($registrationForm->email);
 
         if ($user) {
             throw ValidationException::withMessages([
@@ -45,14 +42,9 @@ readonly class AuthService
             ]);
         }
 
-        $user = new User([
-            'name'     => $registrationForm->name,
-            'email'    => $email,
-            'password' => $this->hasher->make($registrationForm->password),
-        ]);
-        $user->save();
+        $user = $this->repository->create($registrationForm);
 
-        return $user->createToken($userAgent);
+        return $this->repository->createToken($user, $this->tokenName($userAgent));
     }
 
     /**
@@ -66,10 +58,7 @@ readonly class AuthService
         LoginCredentials $credentials,
         string|null $userAgent
     ): NewAccessToken {
-        /** @var User $user */
-        $user = User::query()
-            ->where('email', $credentials->email)
-            ->first();
+        $user = $this->repository->findByEmail($credentials->email);
 
         if ($user === null) {
             throw ValidationException::withMessages([
@@ -77,12 +66,17 @@ readonly class AuthService
             ]);
         }
 
-        if (! $this->hasher->check($credentials->password, $user->password)) {
+        if (! $this->hasher->check($credentials->password, $user->getAuthPassword())) {
             throw ValidationException::withMessages([
                 'password' => $this->translator->get('auth.failed'),
             ]);
         }
 
-        return $user->createToken($userAgent);
+        return $this->repository->createToken($user, $this->tokenName($userAgent));
+    }
+
+    private function tokenName(string|null $userAgent): string
+    {
+        return $userAgent ?? static::NULL_USER_AGENT;
     }
 }

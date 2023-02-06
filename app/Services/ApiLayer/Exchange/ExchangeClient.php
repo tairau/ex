@@ -7,11 +7,15 @@ namespace App\Services\ApiLayer\Exchange;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Collection;
 
-final class ExchangeClient
+class ExchangeClient
 {
     private const PATH = 'exchangerates_data';
 
-    public function __construct(protected PendingRequest $client) {}
+    public function __construct(
+        protected PendingRequest $client,
+        protected ResponseTransformer $transformer,
+    ) {
+    }
 
     /**
      * @return \Illuminate\Support\Collection<\App\Services\ApiLayer\Exchange\Symbol>
@@ -19,13 +23,13 @@ final class ExchangeClient
      */
     public function symbols(): Collection
     {
-        return Symbol::wrapToCollection(
+        return $this->transformer->collectSymbols(
             $this->client
                 ->throw()
                 ->get(
                     sprintf('%s/symbols', self::PATH),
                 )
-                ->json('symbols', [])
+                ->json()
         );
     }
 
@@ -36,7 +40,8 @@ final class ExchangeClient
      */
     public function latest(string $baseSymbol): RateList
     {
-        $json = $this->client
+        return $this->transformer->collectRates(
+            ...$this->client
             ->throw()
             ->get(
                 sprintf('%s/latest', self::PATH),
@@ -44,12 +49,7 @@ final class ExchangeClient
                     'base' => $baseSymbol,
                 ]
             )
-            ->json();
-
-        return new RateList(
-            $json['base'],
-            $json['date'],
-            Rate::wrapToCollection($json['rates'])
+            ->json()
         );
     }
 }

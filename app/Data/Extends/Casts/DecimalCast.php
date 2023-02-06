@@ -2,7 +2,7 @@
 
 declare(strict_types = 1);
 
-namespace App\Data\Casts;
+namespace App\Data\Extends\Casts;
 
 use Brick\Math\BigDecimal;
 use Brick\Math\Exception\MathException;

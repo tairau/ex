@@ -4,8 +4,8 @@ declare(strict_types = 1);
 
 namespace App\Data\Purchase;
 
-use App\Data\Casts\DecimalCast;
-use App\Data\Rules\Decimal;
+use App\Data\Extends\Casts\DecimalCast;
+use App\Data\Extends\Rules\Decimal;
 use Brick\Math\BigDecimal;
 use Spatie\LaravelData\Attributes\MapInputName;
 use Spatie\LaravelData\Attributes\Validation\IntegerType;

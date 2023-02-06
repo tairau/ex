@@ -21,7 +21,7 @@ class WalletResource extends JsonResource
             'id'       => $this->wallet->id,
             'user'     => new UserResource($this->whenLoaded('user')),
             'currency' => new CurrencyResource($this->whenLoaded('currency')),
-            'balance'  => (string)$this->wallet->balance,
+            'balance'  => $this->wallet->balance->toFloat(),
         ];
     }
 }
